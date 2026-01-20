@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>O Salto de Gamow</title>
+<style>
+  :root { color-scheme: dark light; }
+  body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; background: #0e0f13; color: #e8eaee; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #1b1d24; border-bottom: 1px solid #2a2d36; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .tabs { display: inline-flex; gap: 8px; margin-left: 16px; }
+  .tab { padding: 8px 12px; border-radius: 8px; border: 1px solid #2f3340; background: #22252e; color: #cfd3dc; cursor: pointer; }
+  .tab.active { border-color: #424756; background: #2a2e3a; }
+  .actions { display: inline-flex; gap: 8px; }
+  .action { padding: 8px 12px; border-radius: 8px; border: 1px solid #3a3f4f; background: #262a36; color: #dfe3ee; cursor: pointer; }
+  .action.primary { background: #343a4a; }
+  .select { padding: 8px 10px; border-radius: 8px; border: 1px solid #3a3f4f; background: #1f232e; color: #e8eaee; }
+  .container { display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 16px; align-items: start; }
+  .panel { background: #1a1c24; border: 1px solid #2a2d36; border-radius: 12px; padding: 14px; }
+  .panel h1 { margin: 0 0 6px; font-size: 22px; }
+  .panel h2 { margin: 12px 0 6px; font-size: 16px; opacity: 0.95; }
+  .section-title { font-size: 14px; opacity: 0.75; margin-bottom: 8px; }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; margin: 10px 0; }
+  .row label { font-size: 14px; }
+  .value { min-width: 64px; text-align: right; font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; opacity: 0.9; }
+  input[type="range"] { width: 100%; accent-color: #e33f46; }
+  .stats { margin-top: 8px; font-size: 14px; }
+  .hud { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  .hud-item { background: #1f232e; border: 1px solid #2f3340; border-radius: 10px; padding: 8px 10px; font-size: 13px; }
+  .hud-item strong { display: block; font-size: 12px; opacity: 0.8; }
+  .button { margin-top: 10px; width: 100%; padding: 12px 12px; border: 1px solid #3b3f4f; background: #262a36; color: #e7ebff; border-radius: 10px; cursor: pointer; }
+  .button.accent { background: #e33f46; border-color: #e33f46; color: #fff; }
+  .canvas-wrap { position: relative; display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .viewport { background: #0a0e1a; border: 1px solid #2a2f4a; border-radius: 12px; padding: 10px; }
+  .viewport h3 { margin: 0 0 8px; font-size: 15px; opacity: 0.85; }
+  canvas { width: 100%; height: 520px; background: #0a0e1a; border-radius: 10px; display: block; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; }
+  .modal { width: min(720px, 92vw); background: #161b2e; border: 1px solid #36406e; border-radius: 14px; padding: 16px; box-shadow: 0 14px 50px rgba(0,0,0,0.45); }
+  .modal h3 { margin: 0 0 8px; font-size: 18px; }
+  .modal p { margin: 8px 0; line-height: 1.4; }
+  .modal .close { margin-top: 10px; padding: 8px 12px; border: 1px solid #3b4268; background: #222742; color: #e7ebff; border-radius: 10px; cursor: pointer; }
+  .legend { display: flex; gap: 10px; margin-top: 8px; font-size: 13px; opacity: 0.9; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .dot.potential { background: #9c7cfe; }
+  .dot.wave { background: #34c4ff; }
+  .dot.particle { background: #ff6b6b; }
+  .escape { margin-top: 6px; font-size: 14px; min-height: 22px; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <span>O Salto de Gamow</span>
+      <div class="tabs">
+        <button class="tab active">Simulador</button>
+        <button class="tab">Teoria</button>
+      </div>
+    </div>
+    <div class="actions">
+      <label>Modo</label>
+      <select class="select" id="modeSel">
+        <option value="lab">Laboratório</option>
+        <option value="arcade">Arcade</option>
+      </select>
+      <label>Dificuldade</label>
+      <select class="select" id="diffSel">
+        <option value="easy">Fácil</option>
+        <option value="med">Médio</option>
+        <option value="hard">Difícil</option>
+      </select>
+      <button class="action" id="newGameBtn">Novo Jogo</button>
+      <button class="action" id="pauseBtn">Pausar</button>
+      <button class="action" id="saveBtn">Salvar Resultado</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="panel">
+      <h1>Control Panel</h1>
+      <div class="row">
+        <label>Altura da barreira V₀</label>
+        <div class="value" id="v0Val">5.00</div>
+      </div>
+      <input type="range" id="v0" min="0.5" max="12" step="0.01" value="5">
+      <div class="row">
+        <label>Energia da partícula E</label>
+        <div class="value" id="eVal">1.00</div>
+      </div>
+      <input type="range" id="e" min="0.05" max="4.95" step="0.01" value="1">
+      <div class="row">
+        <label>Espessura da barreira a</label>
+        <div class="value" id="aVal">1.50</div>
+      </div>
+      <input type="range" id="a" min="0.2" max="5" step="0.01" value="1.5">
+      <h2>Probabilidade de transmissão T</h2>
+      <div class="stats"><span id="tVal">Chance de escape: 0.00%</span></div>
+      <div class="escape" id="escapeStatus"></div>
+      <div class="hud">
+        <div class="hud-item"><strong>Tempo</strong><span id="timeVal">60s</span></div>
+        <div class="hud-item"><strong>Escapes</strong><span id="escapesVal">0</span></div>
+        <div class="hud-item"><strong>Aproveitamento</strong><span id="rateVal">0.00%</span></div>
+      </div>
+      <button class="button accent" id="tip">Dica do Gamow</button>
+      <div class="legend">
+        <span class="chip"><span class="dot potential"></span> Potencial</span>
+        <span class="chip"><span class="dot wave"></span> Função de onda ψ</span>
+        <span class="chip"><span class="dot particle"></span> Partícula alfa</span>
+      </div>
+    </div>
+    <div class="panel canvas-wrap">
+      <div class="viewport">
+        <h3>Visualização</h3>
+        <canvas id="view" width="1080" height="520"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h3>Dica do Gamow</h3>
+      <p>Aumentar E ou diminuir a espessura a aumenta exponencialmente a chance de tunelamento. A dependência principal está em e^{-2 k₂ a}, onde k₂ = √(2 m (V₀ − E))/ℏ.</p>
+      <p>Quando E < V₀, ψ decai dentro da barreira. Essa penetração evanescente torna possível a transmissão com pequena probabilidade a cada colisão.</p>
+      <p>Pequenas variações em a ou E mudam T em muitas ordens de grandeza, explicando a ampla gama de meias-vidas descrita pela lei de Geiger–Nuttall.</p>
+      <button class="close" id="closeTip">Entendi</button>
+    </div>
+  </div>
+<script>
+  const canvas = document.getElementById('view');
+  const ctx = canvas.getContext('2d');
+  const v0Slider = document.getElementById('v0');
+  const eSlider = document.getElementById('e');
+  const aSlider = document.getElementById('a');
+  const v0Val = document.getElementById('v0Val');
+  const eVal = document.getElementById('eVal');
+  const aVal = document.getElementById('aVal');
+  const tVal = document.getElementById('tVal');
+  const escapeStatus = document.getElementById('escapeStatus');
+  const tipBtn = document.getElementById('tip');
+  const overlay = document.getElementById('overlay');
+  const closeTip = document.getElementById('closeTip');
+  const modeSel = document.getElementById('modeSel');
+  const diffSel = document.getElementById('diffSel');
+  const newGameBtn = document.getElementById('newGameBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const timeVal = document.getElementById('timeVal');
+  const escapesVal = document.getElementById('escapesVal');
+  const rateVal = document.getElementById('rateVal');
+  let audioCtx;
+  const m = 1;
+  const hbar = 1;
+  const unitScale = 80;
+  let width = canvas.width;
+  let height = canvas.height;
+  let wellWidth = 240;
+  let particleX = 60;
+  let particleY = height * 0.62;
+  let vx = 2.2;
+  let escaping = false;
+  let escaped = false;
+  let lastEscapeTime = 0;
+  let mode = 'lab';
+  let difficulty = 'easy';
+  let gameRunning = true;
+  let timeLeft = 60;
+  let lastTick = performance.now();
+  let attempts = 0;
+  let escapes = 0;
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+  function fmt(x, digits=2) { return x.toFixed(digits); }
+  function k1(E) { return Math.sqrt(2 * m * E) / hbar; }
+  function k2(V0, E) { return Math.sqrt(2 * m * Math.max(0, V0 - E)) / hbar; }
+  function transmission(V0, E, a) {
+    if (E <= 0 || V0 <= 0) return 0;
+    if (E >= V0) return 0.95;
+    const r = E / V0;
+    const k = k2(V0, E);
+    const t = 16 * r * (1 - r) * Math.exp(-2 * k * a);
+    return clamp(t, 0, 0.95);
+  }
+  function playBeep() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 720;
+      g.gain.value = 0.08;
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start();
+      setTimeout(() => { o.stop(); }, 220);
+    } catch (e) {}
+  }
+  function drawPotential(V0, a) {
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#0a0e1a';
+    ctx.fillRect(0, 0, width, height);
+    const baseY = height * 0.8;
+    const scaleY = 18;
+    ctx.strokeStyle = '#2a2f4a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(16, baseY);
+    ctx.lineTo(width - 16, baseY);
+    ctx.stroke();
+    ctx.fillStyle = '#9c7cfe';
+    const barrierWidthPx = a * unitScale;
+    const barrierX = wellWidth;
+    const barrierH = V0 * scaleY;
+    ctx.fillRect(barrierX, baseY - barrierH, barrierWidthPx, barrierH);
+    ctx.fillStyle = '#273055';
+    ctx.fillRect(0, baseY - 4, wellWidth, 4);
+    ctx.fillStyle = '#273055';
+    ctx.fillRect(barrierX + barrierWidthPx, baseY - 4, width - (barrierX + barrierWidthPx), 4);
+    return { barrierX, barrierWidthPx, baseY, scaleY };
+  }
+  function drawWave(V0, E, a, geom) {
+    const midY = geom.baseY - 120;
+    const amp = 50;
+    const barrierEndX = geom.barrierX + geom.barrierWidthPx;
+    const k1val = k1(E);
+    const k2val = k2(V0, E);
+    ctx.strokeStyle = '#34c4ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 16; x < width - 16; x++) {
+      const physX = x / unitScale;
+      const physBarrierStart = geom.barrierX / unitScale;
+      const physBarrierEnd = barrierEndX / unitScale;
+      let psi = 0;
+      if (x < geom.barrierX) {
+        psi = Math.sin(k1val * physX);
+      } else if (x <= barrierEndX) {
+        if (E < V0) {
+          const psi0 = Math.sin(k1val * physBarrierStart);
+          const dx = physX - physBarrierStart;
+          psi = psi0 * Math.exp(-k2val * dx);
+        } else {
+          const dx = physX - physBarrierStart;
+          psi = Math.sin(k1val * physBarrierStart + k1val * dx);
+        }
+      } else {
+        if (E < V0) {
+          const psi0 = Math.sin(k1val * physBarrierStart) * Math.exp(-k2val * (physBarrierEnd - physBarrierStart));
+          const dx = physX - physBarrierEnd;
+          psi = psi0 * Math.sin(k1val * dx + 0.0001);
+        } else {
+          const dx = physX - physBarrierEnd;
+          psi = Math.sin(k1val * physBarrierEnd + k1val * dx);
+        }
+      }
+      const y = midY - amp * psi;
+      if (x === 16) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  function drawParticle(geom) {
+    ctx.fillStyle = '#ff6b6b';
+    ctx.beginPath();
+    ctx.arc(particleX, particleY, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  function step(V0, E, a, geom, T) {
+    const barrierLeft = geom.barrierX;
+    const barrierRight = geom.barrierX + geom.barrierWidthPx;
+    if (!escaped && gameRunning) {
+      particleX += vx;
+      if (!escaping && particleX + 6 >= barrierLeft) {
+        const p = T;
+        const r = Math.random();
+        attempts++;
+        if (r < p) {
+          escaping = true;
+          vx = Math.abs(vx) + 0.8;
+          playBeep();
+          escapeStatus.textContent = 'Salto de Gamow! Tunelou.';
+          lastEscapeTime = performance.now();
+          escapes++;
+        } else {
+          vx = -Math.abs(vx);
+          escapeStatus.textContent = '';
+        }
+      }
+      if (escaping && particleX > barrierRight + 40) {
+        escaped = true;
+      }
+      if (particleX < 12) {
+        vx = Math.abs(vx);
+      }
+    } else {
+      if (performance.now() - lastEscapeTime > 1200) {
+        particleX = 60;
+        vx = 2.2;
+        escaping = false;
+        escaped = false;
+        escapeStatus.textContent = '';
+      }
+    }
+  }
+  function render() {
+    const V0 = parseFloat(v0Slider.value);
+    const E = clamp(parseFloat(eSlider.value), 0.01, V0 - 0.01);
+    const a = parseFloat(aSlider.value);
+    const T = transmission(V0, E, a);
+    const now = performance.now();
+    if (gameRunning && mode === 'arcade') {
+      const dt = (now - lastTick) / 1000;
+      timeLeft = Math.max(0, timeLeft - dt);
+      if (timeLeft === 0) {
+        gameRunning = false;
+        escapeStatus.textContent = 'Tempo esgotado.';
+        pauseBtn.textContent = 'Retomar';
+      }
+      lastTick = now;
+    } else {
+      lastTick = now;
+    }
+    v0Val.textContent = fmt(V0, 2);
+    eVal.textContent = fmt(E, 2);
+    aVal.textContent = fmt(a, 2);
+    tVal.textContent = 'Chance de escape: ' + fmt(100 * T, 4) + '%';
+    timeVal.textContent = (mode === 'arcade' ? Math.ceil(timeLeft) + 's' : '∞');
+    escapesVal.textContent = escapes.toString();
+    const rate = attempts > 0 ? (100 * escapes / attempts) : 0;
+    rateVal.textContent = fmt(rate, 2) + '%';
+    const geom = drawPotential(V0, a);
+    drawWave(V0, E, a, geom);
+    drawParticle(geom);
+    step(V0, E, a, geom, T);
+    requestAnimationFrame(render);
+  }
+  function syncRanges() {
+    const V0 = parseFloat(v0Slider.value);
+    const eMax = Math.max(0.05, V0 - 0.05);
+    eSlider.max = eMax.toString();
+    const E = parseFloat(eSlider.value);
+    if (E >= eMax) eSlider.value = (eMax - 0.01).toString();
+  }
+  function applyDifficulty() {
+    if (difficulty === 'easy') {
+      v0Slider.value = '4'; aSlider.value = '1.2'; eSlider.value = '1.5';
+    } else if (difficulty === 'med') {
+      v0Slider.value = '6'; aSlider.value = '2.0'; eSlider.value = '1.0';
+    } else {
+      v0Slider.value = '8'; aSlider.value = '3.0'; eSlider.value = '0.6';
+    }
+    syncRanges();
+  }
+  function setMode(newMode) {
+    mode = newMode;
+    const isArcade = mode === 'arcade';
+    v0Slider.disabled = isArcade;
+    aSlider.disabled = isArcade;
+    eSlider.disabled = false;
+    if (isArcade) applyDifficulty();
+    resetGame(isArcade ? 60 : Infinity);
+  }
+  function resetGame(seconds) {
+    particleX = 60;
+    vx = 2.2;
+    escaping = false;
+    escaped = false;
+    escapeStatus.textContent = '';
+    attempts = 0;
+    escapes = 0;
+    timeLeft = isFinite(seconds) ? seconds : 1e9;
+    lastTick = performance.now();
+    gameRunning = true;
+    pauseBtn.textContent = 'Pausar';
+  }
+  v0Slider.addEventListener('input', syncRanges);
+  eSlider.addEventListener('input', () => {});
+  aSlider.addEventListener('input', () => {});
+  tipBtn.addEventListener('click', () => { overlay.style.display = 'flex'; });
+  closeTip.addEventListener('click', () => { overlay.style.display = 'none'; });
+  modeSel.addEventListener('change', (e) => { setMode(e.target.value); });
+  diffSel.addEventListener('change', (e) => { difficulty = e.target.value; if (mode === 'arcade') applyDifficulty(); });
+  newGameBtn.addEventListener('click', () => { resetGame(mode === 'arcade' ? 60 : Infinity); });
+  pauseBtn.addEventListener('click', () => {
+    gameRunning = !gameRunning;
+    pauseBtn.textContent = gameRunning ? 'Pausar' : 'Retomar';
+    lastTick = performance.now();
+  });
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = 'salto-de-gamow.png';
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+  window.addEventListener('resize', () => {
+    const rect = canvas.getBoundingClientRect();
+    width = canvas.width;
+    height = canvas.height;
+  });
+  syncRanges();
+  setMode('lab');
+  render();
+</script>
+</body>
+</html>
