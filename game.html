@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>O Salto de Gamow - Trilha Quântica</title>
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0e0f13;
+            color: #e8eaee;
+            overflow: hidden;
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .hud-panel {
+            background: rgba(20, 24, 35, 0.9);
+            border: 1px solid #3a3f4f;
+            border-radius: 12px;
+            padding: 15px;
+            pointer-events: auto;
+            min-width: 200px;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 20px;
+            color: #ffeb3b;
+        }
+
+        h2 {
+            margin: 0 0 5px;
+            font-size: 16px;
+            color: #4fc3f7;
+        }
+
+        p {
+            margin: 5px 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .energy-bar- container {
+            width: 100%;
+            height: 20px;
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+            border: 1px solid #444;
+        }
+
+        .energy-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff9800, #ffeb3b);
+            transition: width 0.2s;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn-boost {
+            background: #e33f46;
+            color: white;
+            border: none;
+            padding: 20px 60px;
+            font-size: 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(227, 63, 70, 0.5);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .btn-boost:active {
+            transform: translateX(-50%) scale(0.95);
+            box-shadow: 0 0 10px rgba(227, 63, 70, 0.8);
+        }
+
+        .btn-boost:disabled {
+            background: #555;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background: #1a1c24;
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid #4fc3f7;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .modal h1 {
+            font-size: 32px;
+            color: #4fc3f7;
+        }
+
+        .start-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .level-info {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #81c784;
+        }
+
+        .fail-msg {
+            color: #e57373;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="game-ui">
+        <div class="hud-panel">
+            <h1>Nível <span id="levelDisplay">1</span></h1>
+            <h2 id="levelName">O Despertar</h2>
+            <p id="missionText">Aumente a energia para escapar.</p>
+            <div class="level-info">Escapes: <span id="scoreDisplay">0</span>/<span id="targetDisplay">3</span></div>
+        </div>
+
+        <div class="hud-panel" style="text-align: right;">
+            <h2>Bateria Nuclear</h2>
+            <div class="energy-bar- container">
+                <div id="stabilityBar" class="energy-bar"></div>
+            </div>
+            <p id="statusText">Estável</p>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="boostBtn" class="btn-boost">INJETAR ENERGIA</button>
+        <p
+            style="margin-top: 10px; font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 15px;">
+            Segure ESPAÇO ou Clique</p>
+    </div>
+
+    <div id="startScreen" class="overlay">
+        <div class="modal">
+            <h1>Trilha Quântica</h1>
+            <p>Bem-vindo, Operador.</p>
+            <p>Sua missão é ajudar partículas a tunelar para fora do núcleo.</p>
+            <p>Mas cuidado: Injetar energia gasta sua bateria. Se acabar, o núcleo colapsa.</p>
+            <button class="start-btn" onclick="startGame()">Começar Missão</button>
+        </div>
+    </div>
+
+    <div id="gameOverScreen" class="overlay" style="display: none;">
+        <div class="modal" style="border-color: #e57373;">
+            <h1 style="color: #e57373;">Falha Crítica</h1>
+            <p>A energia do núcleo se esgotou.</p>
+            <button class="start-btn" style="background: #e57373;" onclick="location.reload()">Tentar Novamente</button>
+        </div>
+    </div>
+
+    <div id="victoryScreen" class="overlay" style="display: none;">
+        <div class="modal" style="border-color: #ffd700;">
+            <h1 style="color: #ffd700;">Sucesso Total!</h1>
+            <p>Você dominou a arte do Tunelamento Quântico.</p>
+            <p>Todos os isótopos foram estabilizados.</p>
+            <button class="start-btn" onclick="location.reload()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game State
+        let level = 1;
+        let score = 0;
+        let target = 3;
+        let stability = 100;
+        let maxStability = 100;
+        let isBoosting = false;
+        let gameRunning = false;
+        let time = 0;
+
+        // Physics Parameters
+        let V0 = 6.0; // Barrier Height fixed
+        let E_base = 0.5; // Base energy
+        let E_boost = 3.5; // Added energy when boosting
+        let E_current = 0.5;
+        let a_base = 2.0;
+        let a_current = 2.0;
+
+        // Visuals
+        let particleX = 50;
+        let particleY = window.innerHeight / 2;
+        let vx = 3;
+        let escaping = false;
+        let escaped = false;
+        let barrierX = window.innerWidth * 0.4;
+
+        // Levels Configuration
+        const levels = [
+            { id: 1, name: "O Despertar", target: 3, oscilate: false, drain: 0.2, msg: "Segure o botão para dar energia suficiente para o salto." },
+            { id: 2, name: "Ressonância", target: 3, oscilate: true, speed: 0.02, drain: 0.4, msg: "A barreira oscila! Injete energia APENAS quando ela estiver fina." },
+            { id: 3, name: "Crise Energética", target: 5, oscilate: true, speed: 0.05, drain: 0.8, msg: "Oscilação rápida e alto consumo. Timing perfeito é essencial." }
+        ];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            barrierX = canvas.width * 0.4;
+            particleY = canvas.height * 0.6;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            gameRunning = true;
+            loadLevel(1);
+            loop();
+        }
+
+        function loadLevel(lvlId) {
+            level = lvlId;
+            const config = levels[level - 1];
+            document.getElementById('levelDisplay').innerText = level;
+            document.getElementById('levelName').innerText = config.name;
+            document.getElementById('missionText').innerText = config.msg;
+            score = 0;
+            updateScore();
+            stability = 100;
+            showMessage(`Nível ${level}: ${config.name}`);
+        }
+
+        function showMessage(msg) {
+            // Simple overlay toast could go here
+            console.log(msg);
+        }
+
+        // Input Handling
+        const btn = document.getElementById('boostBtn');
+        btn.addEventListener('mousedown', () => isBoosting = true);
+        btn.addEventListener('mouseup', () => isBoosting = false);
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); isBoosting = true; });
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); isBoosting = false; });
+
+        document.addEventListener('keydown', (e) => { if (e.code === 'Space') isBoosting = true; });
+        document.addEventListener('keyup', (e) => { if (e.code === 'Space') isBoosting = false; });
+
+        // Physics Functions
+        function k2(V, E) { return Math.sqrt(Math.max(0, 2 * (V - E))); } // Simplified units
+        function transmission(V, E, a) {
+            if (E >= V) return 0.9;
+            const k = k2(V, E);
+            // T ~ exp(-2 k a)
+            return Math.exp(-2 * k * a);
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            const config = levels[level - 1];
+            time += 1;
+
+            // Barrier Oscillation logic (Levels 2+)
+            if (config.oscilate) {
+                // a oscillates between 1.0 and 3.0
+                a_current = 2.0 + Math.sin(time * config.speed) * 1.0;
+            } else {
+                a_current = a_base;
+            }
+
+            // Energy Logic
+            if (isBoosting) {
+                E_current = Math.min(E_current + 0.1, E_base + E_boost);
+                stability -= config.drain;
+            } else {
+                E_current = Math.max(E_current - 0.1, E_base);
+                stability = Math.min(stability + 0.05, 100); // Slow recharge
+            }
+
+            if (stability <= 0) {
+                gameOver();
+            }
+
+            // Particle Logic
+            if (!escaped) {
+                particleX += vx;
+                // Collision with barrier
+                if (particleX >= barrierX - 10 && particleX <= barrierX + 10 && !escaping) {
+                    const T = transmission(V0, E_current, a_current);
+                    const roll = Math.random();
+
+                    // Visual feedback for hitting thick barrier
+                    if (isBoosting && T < 0.01) {
+                        // Wasted energy warning could go here
+                    }
+
+                    if (roll < T * 0.5) { // 0.5 factor to make it harder/gamey
+                        escaping = true;
+                        vx = 5; // Shoot out
+                        score++;
+                        stability = Math.min(stability + 20, 100); // Reward
+                        playSound('jump');
+                        updateScore();
+
+                        if (score >= config.target) {
+                            if (level < levels.length) {
+                                setTimeout(() => loadLevel(level + 1), 1000);
+                            } else {
+                                victory();
+                            }
+                        }
+                    } else {
+                        vx = -Math.abs(vx); // Reflect
+                        particleX = barrierX - 15;
+                        playSound('bounce');
+                    }
+                }
+
+                // Wall bounce
+                if (particleX < 0) {
+                    vx = Math.abs(vx);
+                }
+            } else {
+                // Reset particle if escaped logic
+                if (particleX > canvas.width) {
+                    escaped = false;
+                    escaping = false;
+                    particleX = 50;
+                    vx = 3;
+                } else {
+                    particleX += vx;
+                }
+            }
+
+            // UI Updates
+            document.getElementById('statusText').innerText = Math.floor(stability) + '%';
+            document.getElementById('statusText').style.color = stability < 30 ? '#ff5252' : '#81c784';
+            document.getElementById('stabilityBar').style.width = Math.max(0, stability) + '%';
+            document.getElementById('stabilityBar').style.background = stability < 30 ? '#ff5252' : 'linear-gradient(90deg, #ff9800, #ffeb3b)';
+        }
+
+        function updateScore() {
+            const config = levels[level - 1];
+            document.getElementById('scoreDisplay').innerText = score;
+            document.getElementById('targetDisplay').innerText = config.target;
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+
+        function victory() {
+            gameRunning = false;
+            document.getElementById('victoryScreen').style.display = 'flex';
+        }
+
+        function playSound(type) {
+            // Simple synth placeholder
+            // In real prod, use AudioContext
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0e0f13';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const baseY = canvas.height * 0.7;
+
+            // Draw Well
+            ctx.strokeStyle = '#3a3f4f';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, baseY);
+            ctx.lineTo(barrierX, baseY);
+            ctx.stroke();
+
+            // Draw Barrier (Dynamic Width)
+            const pxScale = 50;
+            const w = a_current * pxScale;
+            const h = V0 * 30;
+
+            // Barrier Color changes based on penetrability hint
+            const T = transmission(V0, E_current, a_current);
+            ctx.fillStyle = isBoosting ? (T > 0.01 ? '#81c784' : '#e57373') : '#5c6bc0';
+
+            ctx.fillRect(barrierX, baseY - h, w, h);
+
+            // Outside
+            ctx.beginPath();
+            ctx.strokeStyle = '#3a3f4f';
+            ctx.moveTo(barrierX + w, baseY);
+            ctx.lineTo(canvas.width, baseY);
+            ctx.stroke();
+
+            // Draw Particle
+            ctx.fillStyle = isBoosting ? '#ffeb3b' : '#ff6b6b';
+            ctx.shadowBlur = isBoosting ? 20 : 0;
+            ctx.shadowColor = '#ffeb3b';
+            ctx.beginPath();
+            ctx.arc(particleX, particleY, isBoosting ? 10 : 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Draw Wave (Visual Candy)
+            if (!escaped) {
+                ctx.strokeStyle = '#29b6f6';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let i = 0; i < barrierX; i += 5) {
+                    const freq = 0.05 + (E_current * 0.05);
+                    ctx.lineTo(i, particleY + Math.sin(time * 0.2 + i * freq) * (10 + E_current * 5));
+                }
+                ctx.stroke();
+            }
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+    </script>
+</body>
+
+</html>
