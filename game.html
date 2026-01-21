@@ -246,12 +246,12 @@
         let time = 0;
 
         // Physics Parameters
-        let V0 = 6.0; // Barrier Height fixed
+        let V0 = 4.5; // Reduced from 6.0 to make it possible
         let E_base = 0.5; // Base energy
-        let E_boost = 3.5; // Added energy when boosting
+        let E_boost = 3.8; // Boost gets close to V0
         let E_current = 0.5;
-        let a_base = 2.0;
-        let a_current = 2.0;
+        let a_base = 1.0; // Thinner barrier (was 2.0)
+        let a_current = 1.0;
 
         // Visuals
         let particleX = 50;
