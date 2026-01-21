@@ -477,6 +477,25 @@
                     ctx.lineTo(i, particleY + Math.sin(time * 0.2 + i * freq) * (10 + E_current * 5));
                 }
                 ctx.stroke();
+
+                // SHOW PROBABILITY NEAR PARTICLE
+                const Ta = transmission(V0, E_current, a_current);
+                const pct = (Ta * 100).toFixed(2);
+
+                ctx.font = "bold 20px Arial";
+                ctx.fillStyle = Ta > 0.01 ? "#81c784" : "#ff5252";
+                ctx.textAlign = "center";
+                ctx.fillText(`Chance: ${pct}%`, particleX, particleY - 40);
+
+                // Draw Target/Reticle on Barrier if Chance is High
+                if (Ta > 0.01) {
+                    ctx.strokeStyle = "#81c784";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.rect(barrierX - 5, canvas.height * 0.7 - V0 * 30 - 5, a_current * 50 + 10, V0 * 30 + 10);
+                    ctx.stroke();
+                    ctx.fillText("SALTO POSSÍVEL!", barrierX + (a_current * 25), canvas.height * 0.7 - V0 * 30 - 20);
+                }
             }
         }
 
