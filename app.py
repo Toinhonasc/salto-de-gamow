@@ -48,23 +48,28 @@ with st.sidebar:
 
 # Página: Regras (Tutorial)
 if mode == "📚 Regras do Jogo":
-    st.title("📜 Protocolo da Missão")
-    st.markdown("### Bem-vindo à Trilha Quântica")
-    st.write("Seu objetivo é guiar partículas instáveis para fora do núcleo atômico. Mas cuidado: a física quântica é traiçoeira.")
+    st.title("🎓 Como Jogar (Tutorial)")
+    st.markdown("### Objetivo: Escapar do Núcleo")
     
-    col1, col2, col3 = st.columns(3)
+    st.info("Sua missão é fazer a partícula (bolinha vermelha) atravessar a parede (azul).")
+
+    st.markdown("### 🎮 Controles")
+    st.markdown("1.  **Botão Vermelho Gigante**: No jogo, haverá um botão grande escrito **'INJETAR ENERGIA'**. Ou use a tecla **ESPAÇO** do teclado.")
+    st.markdown("2.  **Segurar o Botão**: Aumenta a energia da partícula.")
+    st.markdown("3.  **Soltar o Botão**: Economiza bateria.")
+
+    st.markdown("### ⚠️ A Estratégia")
+    col1, col2 = st.columns(2)
     with col1:
-        st.markdown("#### 1. A Barreira Dinâmica")
-        st.write("O núcleo pulsa. A parede (barreira de potencial) fica mais grossa e mais fina. **Só tente escapar quando ela estiver fina!**")
+        st.error("❌ **NÃO SEGURE O TEMPO TODO!**")
+        st.write("Isso acaba com sua bateria instantaneamente e você perde.")
     with col2:
-        st.markdown("#### 2. Bateria Nuclear")
-        st.write("Dar energia à partícula custa estabilidade. Se sua bateria acabar antes de completar os tunelamentos, o núcleo colapsa.")
-    with col3:
-        st.markdown("#### 3. Sintonia Fina")
-        st.write("Não basta gastar energia. Você precisa sincronizar seu 'Boost' com a oscilação da barreira.")
+        st.success("✅ **TENHA PACIÊNCIA**")
+        st.write("Espere a 'parede' ficar fina (pulsando). Só injete energia nesse momento exato.")
 
     st.markdown("---")
-    st.success("Tudo pronto? Selecione **'🎮 Desafio de Gamow'** no menu lateral para começar!")
+    st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjEx.../giphy.gif", caption="Exemplo: Espere a barreira diminuir!") # Placeholder visualization if real one existed
+    st.write("Pronto? Vá para a aba **'🎮 Desafio de Gamow'** e clique no botão **Começar Missão**.")
 
 # Página: Game V2
 elif mode == "🎮 Desafio de Gamow (Jogo)":
